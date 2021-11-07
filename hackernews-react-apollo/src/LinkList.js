@@ -1,44 +1,8 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import Link from './Link'
 import { Query } from 'react-apollo'
 import gql from 'graphql-tag'
 import { LINKS_PER_PAGE } from './constants'
-import React, { Component, Fragment } from 'react'
-
-_nextPage = data => {
-  const page = parseInt(this.props.match.params.page, 10)
-  if (page <= data.feed.count / LINKS_PER_PAGE) {
-    const nextPage = page + 1
-    this.props.history.push(`/new/${nextPage}`)
-  }
-}
-
-_previousPage = () => {
-  const page = parseInt(this.props.match.params.page, 10)
-  if (page > 1) {
-    const previousPage = page - 1
-    this.props.history.push(`/new/${previousPage}`)
-  }
-}
-_getLinksToRender = data => {
-  const isNewPage = this.props.location.pathname.includes('new')
-  if (isNewPage) {
-    return data.feed.links
-  }
-  const rankedLinks = data.feed.links.slice()
-  rankedLinks.sort((l1, l2) => l2.votes.length - l1.votes.length)
-  return rankedLinks
-}
-<Query query={FEED_QUERY} variables={this._getQueryVariables()}></Query>
-_getQueryVariables = () => {
-  const isNewPage = this.props.location.pathname.includes('new')
-  const page = parseInt(this.props.match.params.page, 10)
-
-  const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0
-  const first = isNewPage ? LINKS_PER_PAGE : 100
-  const orderBy = isNewPage ? 'createdAt_DESC' : null
-  return { first, skip, orderBy }
-}
 const NEW_VOTES_SUBSCRIPTION = gql`
   subscription {
     newVote {
@@ -90,11 +54,15 @@ const NEW_LINKS_SUBSCRIPTION = gql`
   }
 `
 export const FEED_QUERY = gql`
-  query FeedQuery($first: Int, $skip: Int, $orderBy: LinkOrderByInput) {
-    feed(first: $first, skip: $skip, orderBy: $orderBy) {
+  query FeedQuery(
+    $take: Int
+    $skip: Int
+    $orderBy: LinkOrderByInput
+  ) {
+    feed(take: $take, skip: $skip, orderBy: $orderBy) {
+      id
       links {
         id
-        createdAt
         url
         description
         postedBy {
@@ -107,12 +75,46 @@ export const FEED_QUERY = gql`
             id
           }
         }
+        createdAt
       }
       count
     }
   }
 `
 class LinkList extends Component {
+  _nextPage = data => {
+    const page = parseInt(this.props.match.params.page, 10)
+    if (page <= data.feed.count / LINKS_PER_PAGE) {
+      const nextPage = page + 1
+      this.props.history.push(`/new/${nextPage}`)
+    }
+  }
+  
+  _previousPage = () => {
+    const page = parseInt(this.props.match.params.page, 10)
+    if (page > 1) {
+      const previousPage = page - 1
+      this.props.history.push(`/new/${previousPage}`)
+    }
+  }
+  _getLinksToRender = data => {
+    const isNewPage = this.props.location.pathname.includes('new')
+    if (isNewPage) {
+      return data.feed.links
+    }
+    const rankedLinks = data.feed.links.slice()
+    rankedLinks.sort((l1, l2) => l2.votes.length - l1.votes.length)
+    return rankedLinks
+  }
+  _getQueryVariables = () => {
+    const isNewPage = this.props.location.pathname.includes('new')
+    const page = parseInt(this.props.match.params.page, 10)
+  
+    const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0
+    const first = isNewPage ? LINKS_PER_PAGE : 100
+    const orderBy = isNewPage ? 'createdAt_DESC' : null
+    return { first, skip, orderBy }
+  }
   _updateCacheAfterVote = (store, createVote, linkId) => {
     const isNewPage = this.props.location.pathname.includes('new')
     const page = parseInt(this.props.match.params.page, 10)
@@ -129,7 +131,6 @@ class LinkList extends Component {
     votedLink.votes = createVote.link.votes
     store.writeQuery({ query: FEED_QUERY, data })
   }
-
   _subscribeToNewLinks = subscribeToMore => {
     subscribeToMore({
       document: NEW_VOTES_SUBSCRIPTION,

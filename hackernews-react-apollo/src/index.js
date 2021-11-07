@@ -14,6 +14,26 @@ import { split } from 'apollo-link'
 import { WebSocketLink } from 'apollo-link-ws'
 import { getMainDefinition } from 'apollo-utilities'
 
+
+const httpLink = createHttpLink({
+  uri: 'http://localhost:4000'
+})
+const authLink = setContext((_, { headers }) => {
+  const token = localStorage.getItem(AUTH_TOKEN)
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : ''
+    }
+  }
+}) 
+const client = new ApolloClient({
+  link: authLink.concat(httpLink),
+  cache: new InMemoryCache()
+});
+
+
+
 const wsLink = new WebSocketLink({
   uri: `ws://localhost:4000`,
   options: {
@@ -33,26 +53,7 @@ const link = split(
   authLink.concat(httpLink)
 )
 
-const client = new ApolloClient({
-  link,
-  cache: new InMemoryCache()
-})
-const httpLink = createHttpLink({
-  uri: 'http://localhost:4000'
-})
-const client = new ApolloClient({
-  link: authLink.concat(httpLink),
-  cache: new InMemoryCache()
-});
-const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem(AUTH_TOKEN)
-  return {
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : ''
-    }
-  }
-})
+
 
 
 ReactDOM.render(

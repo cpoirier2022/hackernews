@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { Mutation } from 'react-apollo'
 import gql from 'graphql-tag'
-import { setContext } from 'apollo-link-context'
 import { FEED_QUERY } from './LinkList'
 import { LINKS_PER_PAGE } from './constants'
 
