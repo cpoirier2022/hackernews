@@ -5,6 +5,7 @@ import LinkList from './LinkList'
 import Login from './Login'
 import Search from './Search'
 import { Switch, Route, Redirect } from 'react-router-dom'
+import Hi from './Hi'
 class App extends Component {
   render() {
     return (
@@ -18,6 +19,7 @@ class App extends Component {
             <Route exact path='/search' component={Search} />
             <Route exact path='/top' component={LinkList} />
             <Route exact path='/new/:page' component={LinkList} />
+            <Route exact path='/hi' component={Hi} />
           </Switch>
         </div>
       </div>
